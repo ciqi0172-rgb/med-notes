@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>医学笔记检索库</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
+  <link rel="stylesheet" href="./src/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#article">跳到正文</a>
+
+  <header class="topbar">
+    <a class="brand" href="#article" aria-label="医学笔记检索库">
+      <strong>医学笔记</strong>
+      <span>Study Index</span>
+    </a>
+
+    <div class="search-shell" id="searchShell" role="search">
+      <label class="sr-only" for="searchInput">搜索全文</label>
+      <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="10.5" cy="10.5" r="6.5"></circle>
+        <path d="m15.5 15.5 5 5"></path>
+      </svg>
+      <input id="searchInput" type="search" autocomplete="off" spellcheck="false" placeholder="搜索知识点、年份、药名、口诀…">
+      <span class="result-badge" id="resultBadge" aria-live="polite"></span>
+      <button class="clear-button" id="clearButton" type="button">清除</button>
+    </div>
+
+    <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-expanded="false" aria-controls="sidebar">目录</button>
+  </header>
+
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar" aria-label="章节目录">
+      <div class="sidebar-section sidebar-outline">
+        <div class="sidebar-heading-row">
+          <p class="sidebar-label">章节目录</p>
+          <button class="sidebar-close" id="sidebarClose" type="button">收起</button>
+        </div>
+        <nav class="outline-nav" id="outlineNav" aria-label="章节目录"></nav>
+      </div>
+
+      <div class="sidebar-footer" id="stats" role="status">正在载入文档…</div>
+    </aside>
+
+    <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+
+    <main class="reader" id="article" tabindex="-1" aria-label="医学笔记正文">
+      <div class="reader-context" aria-live="polite">
+        <span id="currentSection">载入中</span>
+        <span class="context-divider" aria-hidden="true">/</span>
+        <span id="currentHeading">正在准备目录</span>
+      </div>
+
+      <article class="paper">
+        <div class="prose" id="documentContent">
+          <p class="loading-line">正在载入正文…</p>
+        </div>
+      </article>
+    </main>
+  </div>
+
+  <section class="search-panel" id="searchPanel" role="dialog" aria-labelledby="searchResultsTitle" aria-hidden="true" hidden>
+    <div class="search-panel-head">
+      <div>
+        <p class="panel-kicker">SEARCH RESULTS</p>
+        <h2 id="searchResultsTitle">检索结果</h2>
+      </div>
+      <div class="panel-tools">
+        <span class="result-count" id="resultCount">0</span>
+        <button class="panel-close" id="closeResults" type="button">收起</button>
+      </div>
+    </div>
+    <p class="search-help" id="searchHelp">输入关键词后显示匹配段落。</p>
+    <div class="results-list" id="resultsList"></div>
+  </section>
+
+  <button class="back-top" id="backTop" type="button">回到顶部</button>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
