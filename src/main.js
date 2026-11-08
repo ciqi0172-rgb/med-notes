@@ -464,13 +464,14 @@ function applyRecallMasks() {
         from = pos + Math.max(1, target.length);
       }
     }
-    for (const rule of cueRules) {
+    for (const [ruleIndex, rule] of cueRules.entries()) {
       rule.lastIndex = 0;
       let match;
       while ((match = rule.exec(joined)) !== null) {
         const answer = match[2] || match[0];
         // 兜底限制单次自动遮挡长度，防止非 COPD 小节出现整句/整段空白。
-        if (answer.trim().length > 16) continue;
+        const maxAnswerLength = ruleIndex === 2 ? 24 : 16;
+        if (answer.trim().length > maxAnswerLength) continue;
         const answerOffset = match.index + match[0].lastIndexOf(answer);
         if (answer.trim().length >= 2) {
           matches.push({ start: answerOffset, end: answerOffset + answer.length, text: answer, target: null });
