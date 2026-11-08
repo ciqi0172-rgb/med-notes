@@ -193,6 +193,9 @@ function applyRecallMasks() {
 
     const matches = [];
     for (const target of RECALL_TARGETS) {
+      // “剧烈”只在 COPD 呼吸困难分级的固定语境中遮挡，避免把全文其他无关用法一并遮住。
+      if (target === '剧烈' &&
+          !/(剧烈活动时出现呼吸困难|剧烈、快步、爬坡)/.test(joined)) continue;
       let from = 0;
       while (from <= joined.length - target.length) {
         const pos = joined.indexOf(target, from);
