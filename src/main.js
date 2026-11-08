@@ -134,95 +134,131 @@ const RECALL_TARGETS = [
 ];
 
 function applyRecallMasks() {
+  // 按最小语义块收集文字，而不是逐个 text node 扫描。
+  // 这样“首选 <b>CTPA</b>”等被 HTML 标签拆开的答案也能被识别。
+  const blockSelector = 'p, td, th, li, h1, h2, h3, h4, blockquote';
   const walker = document.createTreeWalker(els.content, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
-      if (!node.nodeValue.trim() || node.parentElement.closest('script, style, .recall-mask')) {
+      if (!node.nodeValue || !node.nodeValue.trim() ||
+          node.parentElement.closest('script, style, .recall-mask')) {
         return NodeFilter.FILTER_REJECT;
       }
       return NodeFilter.FILTER_ACCEPT;
     }
   });
-  const textNodes = [];
-  while (walker.nextNode()) textNodes.push(walker.currentNode);
+  const groups = new Map();
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    const block = node.parentElement.closest(blockSelector) || node.parentElement;
+    if (!groups.has(block)) groups.set(block, []);
+    groups.get(block).push(node);
+  }
 
-  // 批量规则：既处理明确列出的高价值知识点，也处理全文中带有明确考点提示的答案。
-  // 保留提示词，只遮住提示词后面的答案，避免把整句/整段变成填空题。
+  // 每条规则都只遮答案片段，尽可能保留临床线索和解释。
+  // 规则覆盖诊断、检查、阈值、分型、机制、治疗、禁忌及并发症等知识点。
   const cueRules = [
-    /(首选|金标准|确诊检查|最佳检查|最有价值(?:的体征)?|最敏感(?:的指标)?|最特异(?:的指标)?|最常见(?:的并发症|的原因)?|典型表现|特征(?:是|为)?|禁忌(?:证)?|不用|急救处理|治疗首选|诊断标准)[：:\s-]{0,5}([^，。；;、！？\n]{2,18})/g,
-    /(机制|原理|病理特点|鉴别要点|诊断依据)[：:\s-]{0,5}([^，。；;、！？\n]{2,18})/g,
-    /(治疗(?:方案)?|处理|用药|诊断|检查|表现为|主要表现|危险因素|病因|分型|分期|分级|区别|特点|并发症|判断依据)[：:\s-]{0,5}([^，。；;、！？\n]{2,18})/g,
-    /(妊娠[^，。；;]{0,8}首选|并发[^，。；;]{0,8}首选)[：:\s-]{0,3}([^，。；;、！？\n]{2,18})/g
+    /(首选|金标准|确诊检查|最佳检查|最有价值(?:的体征|的检查)?|最敏感(?:的指标|的检查)?|最特异(?:的指标|的检查)?|最常见(?:的并发症|的原因|的病原体)?|典型表现|特征(?:是|为)?|禁忌(?:证)?|禁用|不用|急救处理|治疗首选|诊断标准|确诊依据|首选药物|首选治疗|首选检查)[：:\s-]{0,8}([^，。；;、！？\n]{2,30})/g,
+    /(机制|原理|病理特点|鉴别要点|诊断依据|发病机制|病理生理|治疗原则|处理原则|用药原则|停药指征|手术指征|适应证|并发症处理)[：:\s-]{0,8}([^，。；;、！？\n]{2,30})/g,
+    /(治疗(?:方案|方法)?|处理|用药|诊断|检查|表现为|主要表现|危险因素|病因|分型|分期|分级|区别|特点|并发症|判断依据|诊断依据|阳性(?:标准|表现)?|阴性(?:标准|表现)?|停药|补液|溶栓|抗凝|抗菌药物|抗生素)[：:\s-]{0,5}([^，。；;、！？\n]{2,26})/g,
+    /(妊娠[^，。；;]{0,12}首选|并发[^，。；;]{0,12}首选|合并[^，。；;]{0,10}首选)[：:\s-]{0,5}([^，。；;、！？\n]{2,26})/g,
+    // 明确的阈值/计量指标：保留指标名称，遮住对应界值。
+    /((?:FEV.?1\/FVC|FEV.?1|PaO.?2|PaCO.?2|SaO.?2|pH|血压|收缩压|舒张压|血肌酐|血钾|血钠|血钙|白细胞|血小板|血红蛋白|尿蛋白|eGFR|LVEF|PCWP|CI|ABI|D-二聚体|体温|呼吸频率|心率|年龄|直径|面积|出血量|氧流量)[^，。；;、！？\n]{0,8})(?:≥|≤|>|<|大于|小于|高于|低于)\s?\d[^，。；;、！？\n]{0,12}/gi
   ];
 
   const foundTargets = new Set();
   let maskedCount = 0;
-  for (const node of textNodes) {
-    const value = node.nodeValue;
-    const matches = [];
+  const toMask = [];
 
-    // 明确知识点在全文所有出现位置都参与自检，不再只遮第一次出现。
+  for (const [block, nodes] of groups) {
+    // 映射拼接后的字符偏移到原始 DOM text node，支持跨 <b>/<sub>/<sup>。
+    let joined = '';
+    const segments = [];
+    for (const node of nodes) {
+      const value = node.nodeValue || '';
+      const startOffset = joined.length;
+      joined += value;
+      segments.push({ node, start: startOffset, end: joined.length });
+    }
+    if (!joined) continue;
+
+    const matches = [];
     for (const target of RECALL_TARGETS) {
       let from = 0;
-      while (from <= value.length - target.length) {
-        const start = value.indexOf(target, from);
-        if (start < 0) break;
-        matches.push({ start, end: start + target.length, text: target, target });
-        from = start + Math.max(1, target.length);
+      while (from <= joined.length - target.length) {
+        const pos = joined.indexOf(target, from);
+        if (pos < 0) break;
+        matches.push({ start: pos, end: pos + target.length, text: joined.slice(pos, pos + target.length), target });
+        from = pos + Math.max(1, target.length);
       }
     }
-
-    // 全文规则识别：保留“首选/金标准/禁忌”等提示，遮住其后的具体答案。
     for (const rule of cueRules) {
       rule.lastIndex = 0;
       let match;
-      while ((match = rule.exec(value)) !== null) {
-        const answer = match[2];
+      while ((match = rule.exec(joined)) !== null) {
+        const answer = match[2] || match[0];
         const answerOffset = match.index + match[0].lastIndexOf(answer);
         if (answer.trim().length >= 2) {
-          matches.push({
-            start: answerOffset,
-            end: answerOffset + answer.length,
-            text: answer,
-            target: null
-          });
+          matches.push({ start: answerOffset, end: answerOffset + answer.length, text: answer, target: null });
         }
-        if (match[0].length === 0) rule.lastIndex++;
+        if (!match[0].length) rule.lastIndex++;
       }
     }
 
     matches.sort((a, b) => a.start - b.start || b.end - a.end);
-    const nonOverlapping = [];
-    let end = -1;
+    let lastEnd = -1;
     for (const match of matches) {
-      if (match.start < end) continue;
-      nonOverlapping.push(match);
-      end = match.end;
+      if (match.start < lastEnd || match.end <= match.start) continue;
+      const firstSegment = segments.find((segment) => match.start >= segment.start && match.start < segment.end);
+      const lastSegment = [...segments].reverse().find((segment) => match.end > segment.start && match.end <= segment.end);
+      if (!firstSegment || !lastSegment) continue;
+      toMask.push({
+        start: match.start,
+        end: match.end,
+        text: match.text,
+        target: match.target,
+        startNode: firstSegment.node,
+        startLocal: match.start - firstSegment.start,
+        endNode: lastSegment.node,
+        endLocal: match.end - lastSegment.start
+      });
+      lastEnd = match.end;
     }
-    if (!nonOverlapping.length) continue;
+  }
 
-    const fragment = document.createDocumentFragment();
-    let cursor = 0;
-    for (const match of nonOverlapping) {
-      fragment.append(document.createTextNode(value.slice(cursor, match.start)));
-      const mask = document.createElement('span');
-      mask.className = 'recall-mask';
-      mask.tabIndex = 0;
-      mask.setAttribute('role', 'button');
-      mask.setAttribute('aria-label', '内容已遮盖，点击查看');
-      mask.textContent = match.text;
-      fragment.append(mask);
+  // 倒序替换，避免前面的 DOM 改动影响后续偏移；extractContents 保留原有内联标签。
+  toMask.sort((a, b) => {
+    const pos = a.startNode.compareDocumentPosition(b.startNode);
+    if (a.startNode === b.startNode) return b.startLocal - a.startLocal;
+    if (pos & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+    if (pos & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+    return b.start - a.start;
+  });
+
+  for (const match of toMask) {
+    if (!match.startNode.isConnected || !match.endNode.isConnected) continue;
+    const range = document.createRange();
+    try {
+      range.setStart(match.startNode, match.startLocal);
+      range.setEnd(match.endNode, match.endLocal);
+      const span = document.createElement('span');
+      span.className = 'recall-mask';
+      span.tabIndex = 0;
+      span.setAttribute('role', 'button');
+      span.setAttribute('aria-label', '内容已遮盖，点击查看');
+      span.append(range.extractContents());
+      range.insertNode(span);
       if (match.target) foundTargets.add(match.target);
       maskedCount++;
-      cursor = match.end;
+    } catch (error) {
+      // 极少数跨复杂表格结构的范围跳过，避免破坏原文 DOM。
+      console.debug('Recall mask skipped a complex range:', error);
     }
-    fragment.append(document.createTextNode(value.slice(cursor)));
-    node.parentNode.replaceChild(fragment, node);
   }
 
   for (const target of RECALL_TARGETS) {
-    if (!foundTargets.has(target)) console.debug('Recall mask target not found in a text node:', target);
+    if (!foundTargets.has(target)) console.debug('Recall mask target not found in a text block:', target);
   }
-  console.info(`狂背自检：本次批量遮挡 ${maskedCount} 处内容。`);
+  console.info(\`狂背自检：本次批量遮挡 \${maskedCount} 处内容。\`);
 }
 
 function renderDocSwitcher() {
