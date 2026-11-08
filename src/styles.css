@@ -119,7 +119,7 @@ a { color: inherit; }
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
 .sidebar-close { display: none; padding: 4px 0; color: var(--muted); }
-.doc-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.doc-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .doc-button {
   padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px;
   background: color-mix(in srgb, var(--surface) 62%, transparent);
@@ -384,4 +384,30 @@ mark.search-hit { padding: 0 1px; background: var(--accent); color: var(--ink); 
     transition: none !important;
     scroll-behavior: auto !important;
   }
+}
+
+
+/* Recall self-check: important source phrases are hidden until tapped. */
+.recall-mask {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0.04em 0.28em;
+  border-radius: 4px;
+  background: #d8f36a;
+  color: #d8f36a;
+  box-shadow: inset 0 0 0 1px rgba(63, 79, 12, 0.12);
+  cursor: pointer;
+  user-select: none;
+  vertical-align: baseline;
+  transition: color 120ms ease, background 120ms ease;
+}
+.recall-mask::selection { background: transparent; }
+.recall-mask:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.recall-mask.is-revealed {
+  background: #fff2a8;
+  color: var(--ink);
+  user-select: text;
+}
+@media (max-width: 520px) {
+  .recall-mask { padding: 0.08em 0.24em; }
 }
