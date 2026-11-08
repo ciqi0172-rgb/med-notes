@@ -139,7 +139,7 @@ function applyRecallMasks() {
   const blockSelector = 'p, td, th, li, h1, h2, h3, h4, blockquote';
   const walker = document.createTreeWalker(els.content, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
-      if (!node.nodeValue || !node.nodeValue.trim() ||
+      if (!node.nodeValue ||
           node.parentElement.closest('script, style, .recall-mask')) {
         return NodeFilter.FILTER_REJECT;
       }
