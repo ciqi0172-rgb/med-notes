@@ -112,8 +112,7 @@ const RECALL_TARGETS = [
 ];
 
 function applyRecallMasks() {
-  const root = els.content;
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+  const walker = document.createTreeWalker(els.content, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       if (!node.nodeValue.trim() || node.parentElement.closest('script, style, .recall-mask')) {
         return NodeFilter.FILTER_REJECT;
@@ -123,27 +122,46 @@ function applyRecallMasks() {
   });
   const textNodes = [];
   while (walker.nextNode()) textNodes.push(walker.currentNode);
-  const used = new Set();
+  const foundTargets = new Set();
 
-  for (const target of RECALL_TARGETS) {
-    let done = false;
-    for (const node of textNodes) {
-      if (!node.isConnected || used.has(node) || !node.nodeValue.includes(target)) continue;
-      const start = node.nodeValue.indexOf(target);
-      const matched = node.splitText(start);
-      matched.splitText(target.length);
+  for (const node of textNodes) {
+    const value = node.nodeValue;
+    const matches = [];
+    for (const target of RECALL_TARGETS) {
+      if (foundTargets.has(target)) continue;
+      const start = value.indexOf(target);
+      if (start >= 0) matches.push({ target, start, end: start + target.length });
+    }
+    matches.sort((a, b) => a.start - b.start || b.end - a.end);
+    const nonOverlapping = [];
+    let end = -1;
+    for (const match of matches) {
+      if (match.start < end) continue;
+      nonOverlapping.push(match);
+      end = match.end;
+    }
+    if (!nonOverlapping.length) continue;
+
+    const fragment = document.createDocumentFragment();
+    let cursor = 0;
+    for (const match of nonOverlapping) {
+      fragment.append(document.createTextNode(value.slice(cursor, match.start)));
       const mask = document.createElement('span');
       mask.className = 'recall-mask';
       mask.tabIndex = 0;
       mask.setAttribute('role', 'button');
       mask.setAttribute('aria-label', '内容已遮盖，点击查看');
-      mask.textContent = target;
-      matched.parentNode.replaceChild(mask, matched);
-      used.add(node);
-      done = true;
-      break;
+      mask.textContent = match.target;
+      fragment.append(mask);
+      foundTargets.add(match.target);
+      cursor = match.end;
     }
-    if (!done) console.debug('Recall mask target not found in a text node:', target);
+    fragment.append(document.createTextNode(value.slice(cursor)));
+    node.parentNode.replaceChild(fragment, node);
+  }
+
+  for (const target of RECALL_TARGETS) {
+    if (!foundTargets.has(target)) console.debug('Recall mask target not found in a text node:', target);
   }
 }
 
@@ -235,11 +253,20 @@ function bindEvents() {
     switchDoc(Number(button.dataset.doc)).catch(showLoadError);
   });
 
-  els.content.addEventListener('click', (event) => {
-    const mask = event.target.closest('.recall-mask');
+  function toggleRecallMask(mask) {
     if (!mask || state.docIndex !== DOCS.findIndex((doc) => doc.key === 'recall')) return;
     const revealed = mask.classList.toggle('is-revealed');
     mask.setAttribute('aria-label', revealed ? '已显示内容，点击重新遮盖' : '内容已遮盖，点击查看');
+  }
+  els.content.addEventListener('click', (event) => {
+    toggleRecallMask(event.target.closest('.recall-mask'));
+  });
+  els.content.addEventListener('keydown', (event) => {
+    if (!['Enter', ' '].includes(event.key)) return;
+    const mask = event.target.closest('.recall-mask');
+    if (!mask) return;
+    event.preventDefault();
+    toggleRecallMask(mask);
   });
 
   els.search.addEventListener('input', () => {
