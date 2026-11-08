@@ -229,8 +229,8 @@ function applyRecallMasks() {
   toMask.sort((a, b) => {
     const pos = a.startNode.compareDocumentPosition(b.startNode);
     if (a.startNode === b.startNode) return b.startLocal - a.startLocal;
-    if (pos & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
-    if (pos & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+    if (pos & Node.DOCUMENT_POSITION_FOLLOWING) return 1;
+    if (pos & Node.DOCUMENT_POSITION_PRECEDING) return -1;
     return b.start - a.start;
   });
 
