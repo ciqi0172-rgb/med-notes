@@ -419,7 +419,7 @@ function applyRecallMasks() {
   let maskedCount = 0;
   const toMask = [];
 
-  const chapterHeadings = [...els.content.querySelectorAll('h1.doc-block[id], h2.doc-block[id], h3.doc-block[id], h4.doc-block[id]')]
+  const chapterHeadings = [...els.content.querySelectorAll('[id]')]
     .filter((heading) => Object.prototype.hasOwnProperty.call(CHAPTER_TARGETS, heading.id));
   const chapterIdForBlock = (block) => {
     let activeId = null;
