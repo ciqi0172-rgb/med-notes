@@ -24,6 +24,7 @@ const els = {
 const DOCS = [
   { key: 'mindmap', name: '思维导图', indexUrl: './assets/search-index.json', contentUrl: './assets/content.html' },
   { key: 'kuangbei', name: '狂背', indexUrl: './assets/kuangbei-index.json', contentUrl: './assets/kuangbei-content.html' },
+  { key: 'recall', name: '狂背自检', indexUrl: './assets/kuangbei-index.json', contentUrl: './assets/kuangbei-content.html' },
 ];
 
 const state = {
@@ -83,6 +84,7 @@ async function switchDoc(docIndex, { initial = false } = {}) {
     state.matches = [];
     state.activeOutlineId = null;
     els.content.innerHTML = data.html;
+    if (doc.key === 'recall') applyRecallMasks();
 
     els.search.value = '';
     els.resultBadge.textContent = '';
@@ -97,6 +99,51 @@ async function switchDoc(docIndex, { initial = false } = {}) {
     updateCurrentHeading();
   } finally {
     state.loading = false;
+  }
+}
+
+const RECALL_TARGETS = [
+  '仍<70%', '≥80%', '50-79%', '30-49%', '≥2 次',
+  'LABA+LAMA', '血嗜酸性粒细胞≥300', 'PaO₂≥60、SaO₂≥90%',
+  'D-二聚体：', '≥3 个月', '长期甚至终身',
+  '低危：抗凝，不溶栓', '收缩压<90', '仅用于非发作期',
+  '不用地塞米松', '除 ICS 外唯一可单用控制炎症',
+  '干性支扩：反复咯血', '痰分 4 层', '痰分 3 层', '6-8 周'
+];
+
+function applyRecallMasks() {
+  const root = els.content;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.nodeValue.trim() || node.parentElement.closest('script, style, .recall-mask')) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  const textNodes = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode);
+  const used = new Set();
+
+  for (const target of RECALL_TARGETS) {
+    let done = false;
+    for (const node of textNodes) {
+      if (!node.isConnected || used.has(node) || !node.nodeValue.includes(target)) continue;
+      const start = node.nodeValue.indexOf(target);
+      const matched = node.splitText(start);
+      matched.splitText(target.length);
+      const mask = document.createElement('span');
+      mask.className = 'recall-mask';
+      mask.tabIndex = 0;
+      mask.setAttribute('role', 'button');
+      mask.setAttribute('aria-label', '内容已遮盖，点击查看');
+      mask.textContent = target;
+      matched.parentNode.replaceChild(mask, matched);
+      used.add(node);
+      done = true;
+      break;
+    }
+    if (!done) console.debug('Recall mask target not found in a text node:', target);
   }
 }
 
@@ -186,6 +233,13 @@ function bindEvents() {
     if (!button) return;
     closeSidebar(false);
     switchDoc(Number(button.dataset.doc)).catch(showLoadError);
+  });
+
+  els.content.addEventListener('click', (event) => {
+    const mask = event.target.closest('.recall-mask');
+    if (!mask || state.docIndex !== DOCS.findIndex((doc) => doc.key === 'recall')) return;
+    const revealed = mask.classList.toggle('is-revealed');
+    mask.setAttribute('aria-label', revealed ? '已显示内容，点击重新遮盖' : '内容已遮盖，点击查看');
   });
 
   els.search.addEventListener('input', () => {
