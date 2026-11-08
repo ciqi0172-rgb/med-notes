@@ -144,16 +144,51 @@ function applyRecallMasks() {
   });
   const textNodes = [];
   while (walker.nextNode()) textNodes.push(walker.currentNode);
-  const foundTargets = new Set();
 
+  // 批量规则：既处理明确列出的高价值知识点，也处理全文中带有明确考点提示的答案。
+  // 保留提示词，只遮住提示词后面的答案，避免把整句/整段变成填空题。
+  const cueRules = [
+    /(首选|金标准|确诊检查|最佳检查|最有价值(?:的体征)?|最敏感(?:的指标)?|最特异(?:的指标)?|最常见(?:的并发症|的原因)?|典型表现|特征(?:是|为)?|禁忌(?:证)?|不用|急救处理|治疗首选|诊断标准)[：:\s-]{0,5}([^，。；;、！？\n]{2,18})/g,
+    /(机制|原理|病理特点|鉴别要点|诊断依据)[：:\s-]{0,5}([^，。；;、！？\n]{2,18})/g,
+    /(妊娠[^，。；;]{0,8}首选|并发[^，。；;]{0,8}首选)[：:\s-]{0,3}([^，。；;、！？\n]{2,18})/g
+  ];
+
+  const foundTargets = new Set();
+  let maskedCount = 0;
   for (const node of textNodes) {
     const value = node.nodeValue;
     const matches = [];
+
+    // 明确知识点在全文所有出现位置都参与自检，不再只遮第一次出现。
     for (const target of RECALL_TARGETS) {
-      if (foundTargets.has(target)) continue;
-      const start = value.indexOf(target);
-      if (start >= 0) matches.push({ target, start, end: start + target.length });
+      let from = 0;
+      while (from <= value.length - target.length) {
+        const start = value.indexOf(target, from);
+        if (start < 0) break;
+        matches.push({ start, end: start + target.length, text: target, target });
+        from = start + Math.max(1, target.length);
+      }
     }
+
+    // 全文规则识别：保留“首选/金标准/禁忌”等提示，遮住其后的具体答案。
+    for (const rule of cueRules) {
+      rule.lastIndex = 0;
+      let match;
+      while ((match = rule.exec(value)) !== null) {
+        const answer = match[2];
+        const answerOffset = match.index + match[0].lastIndexOf(answer);
+        if (answer.trim().length >= 2) {
+          matches.push({
+            start: answerOffset,
+            end: answerOffset + answer.length,
+            text: answer,
+            target: null
+          });
+        }
+        if (match[0].length === 0) rule.lastIndex++;
+      }
+    }
+
     matches.sort((a, b) => a.start - b.start || b.end - a.end);
     const nonOverlapping = [];
     let end = -1;
@@ -173,9 +208,10 @@ function applyRecallMasks() {
       mask.tabIndex = 0;
       mask.setAttribute('role', 'button');
       mask.setAttribute('aria-label', '内容已遮盖，点击查看');
-      mask.textContent = match.target;
+      mask.textContent = match.text;
       fragment.append(mask);
-      foundTargets.add(match.target);
+      if (match.target) foundTargets.add(match.target);
+      maskedCount++;
       cursor = match.end;
     }
     fragment.append(document.createTextNode(value.slice(cursor)));
@@ -185,6 +221,7 @@ function applyRecallMasks() {
   for (const target of RECALL_TARGETS) {
     if (!foundTargets.has(target)) console.debug('Recall mask target not found in a text node:', target);
   }
+  console.info(`狂背自检：本次批量遮挡 ${maskedCount} 处内容。`);
 }
 
 function renderDocSwitcher() {
