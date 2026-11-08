@@ -431,7 +431,7 @@ function applyRecallMasks() {
   for (const target of RECALL_TARGETS) {
     if (!foundTargets.has(target)) console.debug('Recall mask target not found in a text block:', target);
   }
-  console.info(\`狂背自检：本次批量遮挡 \${maskedCount} 处内容。\`);
+  console.info(`狂背自检：本次批量遮挡 ${maskedCount} 处内容。`);
 }
 
 function renderDocSwitcher() {
