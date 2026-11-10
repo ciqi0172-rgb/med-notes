@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>医学笔记检索库</title>
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
-  <link rel="stylesheet" href="./src/styles.css?v=floating1">
+  <link rel="stylesheet" href="./src/styles.css?v=floating2">
 </head>
 <body>
   <a class="skip-link" href="#article">跳到正文</a>
@@ -58,11 +58,6 @@
         <span id="currentHeading">正在准备目录</span>
       </div>
 
-      <div class="recall-tools" id="recallTools" hidden aria-label="遮挡编辑工具">
-        <button type="button" id="addMaskButton" class="recall-tool">✏️ 自己遮盖（先选中文字）</button>
-        <button type="button" id="removeMaskModeButton" class="recall-tool">🗑 删除遮挡：关闭</button>
-        <span id="recallToolStatus" role="status">仅在“狂背自检”中使用；自定义内容保存在本机浏览器。</span>
-      </div>
       <article class="paper">
         <div class="prose" id="documentContent">
           <p class="loading-line">正在载入正文…</p>
@@ -86,6 +81,11 @@
     <div class="results-list" id="resultsList"></div>
   </section>
 
+      <div class="recall-tools" id="recallTools" hidden aria-label="遮挡编辑工具">
+        <button type="button" id="addMaskButton" class="recall-tool">✏️ 自己遮盖（先选中文字）</button>
+        <button type="button" id="removeMaskModeButton" class="recall-tool">🗑 删除遮挡：关闭</button>
+        <span id="recallToolStatus" role="status">仅在“狂背自检”中使用；自定义内容保存在本机浏览器。</span>
+      </div>
   <button class="back-top" id="backTop" type="button">回到顶部</button>
   <script type="module" src="./src/main.js?v=selfmask2"></script>
 </body>
