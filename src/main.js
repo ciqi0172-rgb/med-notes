@@ -1002,18 +1002,32 @@ function applyRecallMasks() {
 function wrapPhraseInAnchor(anchor, phrase, kind, key) {
   if (!anchor || !phrase) return false;
   const walker = document.createTreeWalker(anchor, NodeFilter.SHOW_TEXT, {
-    acceptNode(node) { return node.nodeValue?.includes(phrase) && !node.parentElement.closest('.recall-mask,script,style') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT; }
+    acceptNode(node) {
+      return node.nodeValue && !node.parentElement.closest('.recall-mask,script,style')
+        ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    }
   });
-  const node = walker.nextNode();
-  if (!node) return false;
-  const start = node.nodeValue.indexOf(phrase);
+  const nodes = [];
+  let joined = '';
+  let node;
+  while ((node = walker.nextNode())) {
+    nodes.push({ node, start: joined.length, end: joined.length + node.nodeValue.length });
+    joined += node.nodeValue;
+  }
+  const at = joined.indexOf(phrase);
+  if (at < 0) return false;
+  const finish = at + phrase.length;
+  const first = nodes.find(item => item.start <= at && item.end > at);
+  const last = nodes.find(item => item.start < finish && item.end >= finish);
+  if (!first || !last) return false;
   const range = document.createRange();
-  range.setStart(node, start); range.setEnd(node, start + phrase.length);
+  range.setStart(first.node, at - first.start);
+  range.setEnd(last.node, finish - last.start);
   const span = document.createElement('span');
   span.className = 'recall-mask'; span.dataset.maskKind = kind; span.dataset.maskKey = key;
   span.tabIndex = 0; span.setAttribute('role','button'); span.setAttribute('aria-label','内容已遮盖，点击查看');
-  span.append(range.extractContents()); range.insertNode(span);
-  return true;
+  try { span.append(range.extractContents()); range.insertNode(span); return true; }
+  catch (error) { console.debug('Custom mask restore skipped:', error); return false; }
 }
 
 function applySavedCustomMasks() {
@@ -1035,29 +1049,45 @@ function updateRecallTools() {
 function addUserMask() {
   const selection = window.getSelection();
   if (!selection || selection.isCollapsed || !selection.rangeCount) {
-    els.recallToolStatus.textContent = '请先在正文中选中要遮盖的文字。'; return;
+    els.recallToolStatus.textContent = '没有读取到选区。请先选中文字，再直接点遮盖按钮；如果选区消失，请重新选一次。'; return;
   }
   const range = selection.getRangeAt(0);
-  const anchor = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
-    ? range.commonAncestorContainer.closest?.('[id]') || range.commonAncestorContainer.querySelector?.('[id]')
-    : range.commonAncestorContainer.parentElement?.closest('[id]');
-  const text = selection.toString().trim();
-  if (!text || range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE && range.commonAncestorContainer.closest?.('.recall-mask')) return;
-  if (range.startContainer !== range.endContainer || range.startContainer.nodeType !== Node.TEXT_NODE) {
-    els.recallToolStatus.textContent = '请在同一段连续文字中选取内容（暂不支持跨格式/跨段落选择）。'; return;
+  const text = selection.toString();
+  if (!text.trim()) {
+    els.recallToolStatus.textContent = '选中的内容为空，请重新选择正文文字。'; return;
   }
-  const parentAnchor = range.startContainer.parentElement.closest('[id]');
-  const anchorId = parentAnchor?.id || anchor?.id || '';
-  if (!anchorId) { els.recallToolStatus.textContent = '无法定位这段原文，请在具体段落或表格单元格内选取。'; return; }
-  const key = `custom:${anchorId}:${text}:${Date.now()}`;
+  const startElement = range.startContainer.nodeType === Node.ELEMENT_NODE
+    ? range.startContainer : range.startContainer.parentElement;
+  const endElement = range.endContainer.nodeType === Node.ELEMENT_NODE
+    ? range.endContainer : range.endContainer.parentElement;
+  const startAnchor = startElement?.closest('[id]');
+  const endAnchor = endElement?.closest('[id]');
+  if (!startAnchor || !endAnchor || startAnchor !== endAnchor) {
+    els.recallToolStatus.textContent = '请在同一个段落或同一个表格单元格内选择，暂不支持跨段落。'; return;
+  }
+  const selectedFragment = range.cloneContents();
+  if (selectedFragment.querySelector?.('.recall-mask')) {
+    els.recallToolStatus.textContent = '选区包含已有遮挡，请避开橙色遮挡块后再选择。'; return;
+  }
+  const anchorId = startAnchor.id;
+  const key = `custom:${anchorId}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
   const span = document.createElement('span'); span.className = 'recall-mask';
   span.dataset.maskKind = 'custom'; span.dataset.maskKey = key; span.tabIndex = 0;
   span.setAttribute('role','button'); span.setAttribute('aria-label','自定义遮挡，点击查看');
-  try { span.append(range.extractContents()); range.insertNode(span); selection.removeAllRanges(); }
-  catch { els.recallToolStatus.textContent = '这段文字暂时无法遮盖，请换一段连续文字。'; return; }
-  const items = readLocalList(RECALL_PREF_KEY); items.push({anchor: anchorId, text, key});
+  try {
+    span.append(range.extractContents());
+    range.insertNode(span);
+    selection.removeAllRanges();
+  } catch (error) {
+    console.warn('添加自定义遮挡失败：', error);
+    els.recallToolStatus.textContent = '这段内容暂时无法遮盖。请缩小选区，确保只选一个段落或单元格。'; return;
+  }
+  const items = readLocalList(RECALL_PREF_KEY);
+  items.push({ anchor: anchorId, text, key });
   const saved = writeLocalList(RECALL_PREF_KEY, items);
-  els.recallToolStatus.textContent = saved ? '已添加自定义遮挡，并保存在本机。' : '已添加，但浏览器存储空间不可用，刷新后可能丢失。';
+  els.recallToolStatus.textContent = saved
+    ? '遮盖成功！已保存到本机。'
+    : '页面已遮盖，但本机保存失败，刷新后可能丢失。';
 }
 
 function removeRecallMask(mask) {
