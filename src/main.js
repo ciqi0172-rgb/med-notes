@@ -105,7 +105,8 @@ async function switchDoc(docIndex, { initial = false } = {}) {
     state.activeOutlineId = null;
     els.content.innerHTML = data.html;
     if (doc.key === 'recall') applyRecallMasks();
-    els.recallTools.hidden = doc.key !== 'recall';
+    else if (doc.key === 'kuangbei') applySavedCustomMasks();
+    els.recallTools.hidden = !['kuangbei', 'recall'].includes(doc.key);
     state.removeMaskMode = false;
     updateRecallTools();
 
@@ -1028,7 +1029,7 @@ function updateRecallTools() {
   els.removeMaskMode.setAttribute('aria-pressed', String(state.removeMaskMode));
   els.recallToolStatus.textContent = state.removeMaskMode
     ? '删除模式已开启：点击橙色遮挡块即可移除。'
-    : '选中文字后点“自遮盖”；删除模式可移除不合适的遮挡。';
+    : '选中正文中的文字，再点“自定义遮盖”；删除模式可移除不合适的遮挡。';
 }
 
 function addUserMask() {
@@ -1168,7 +1169,7 @@ function bindEvents() {
   }
   els.content.addEventListener('click', (event) => {
     const mask = event.target.closest('.recall-mask');
-    if (mask && state.removeMaskMode && state.docIndex === DOCS.findIndex(doc => doc.key === 'recall')) {
+    if (mask && state.removeMaskMode) {
       removeRecallMask(mask); return;
     }
     toggleRecallMask(mask);
