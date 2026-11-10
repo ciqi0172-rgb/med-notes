@@ -19,6 +19,10 @@ const els = {
   currentSection: document.querySelector('#currentSection'),
   currentHeading: document.querySelector('#currentHeading'),
   backTop: document.querySelector('#backTop'),
+  recallTools: document.querySelector('#recallTools'),
+  addMask: document.querySelector('#addMaskButton'),
+  removeMaskMode: document.querySelector('#removeMaskModeButton'),
+  recallToolStatus: document.querySelector('#recallToolStatus'),
 };
 
 const DOCS = [
@@ -39,11 +43,27 @@ const state = {
   sidebarOpen: false,
   sidebarCloseFocus: null,
   activeOutlineId: '',
+  removeMaskMode: false,
 };
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mobileSidebar = window.matchMedia('(max-width: 900px)');
 const MAX_RENDERED_RESULTS = 80;
+const RECALL_PREF_KEY = 'med-notes-recall-custom-v1';
+const RECALL_EXCLUDE_KEY = 'med-notes-recall-excluded-v1';
+
+function readLocalList(key) {
+  try { const value = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(value) ? value : []; }
+  catch { return []; }
+}
+function writeLocalList(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+  catch { return false; }
+}
+function maskAnchorId(node) {
+  return node?.parentElement?.closest('.doc-block[id], [id]')?.id || '';
+}
+function maskStorageId(anchor, value) { return `${anchor}::${value}`; }
 
 init().catch(showLoadError);
 
@@ -85,6 +105,9 @@ async function switchDoc(docIndex, { initial = false } = {}) {
     state.activeOutlineId = null;
     els.content.innerHTML = data.html;
     if (doc.key === 'recall') applyRecallMasks();
+    els.recallTools.hidden = doc.key !== 'recall';
+    state.removeMaskMode = false;
+    updateRecallTools();
 
     els.search.value = '';
     els.resultBadge.textContent = '';
@@ -948,7 +971,12 @@ function applyRecallMasks() {
     try {
       range.setStart(match.startNode, match.startLocal);
       range.setEnd(match.endNode, match.endLocal);
+      const anchorId = maskAnchorId(match.startNode);
+      const storageId = maskStorageId(anchorId, match.text);
+      if (readLocalList(RECALL_EXCLUDE_KEY).includes(storageId)) continue;
       const span = document.createElement('span');
+      span.dataset.maskKind = 'system';
+      span.dataset.maskKey = storageId;
       span.className = 'recall-mask';
       span.tabIndex = 0;
       span.setAttribute('role', 'button');
@@ -966,7 +994,83 @@ function applyRecallMasks() {
   for (const target of RECALL_TARGETS) {
     if (!foundTargets.has(target)) console.debug('Recall mask target not found in a text block:', target);
   }
+  applySavedCustomMasks();
   console.info(`狂背自检：本次批量遮挡 ${maskedCount} 处内容。`);
+}
+
+function wrapPhraseInAnchor(anchor, phrase, kind, key) {
+  if (!anchor || !phrase) return false;
+  const walker = document.createTreeWalker(anchor, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) { return node.nodeValue?.includes(phrase) && !node.parentElement.closest('.recall-mask,script,style') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT; }
+  });
+  const node = walker.nextNode();
+  if (!node) return false;
+  const start = node.nodeValue.indexOf(phrase);
+  const range = document.createRange();
+  range.setStart(node, start); range.setEnd(node, start + phrase.length);
+  const span = document.createElement('span');
+  span.className = 'recall-mask'; span.dataset.maskKind = kind; span.dataset.maskKey = key;
+  span.tabIndex = 0; span.setAttribute('role','button'); span.setAttribute('aria-label','内容已遮盖，点击查看');
+  span.append(range.extractContents()); range.insertNode(span);
+  return true;
+}
+
+function applySavedCustomMasks() {
+  for (const item of readLocalList(RECALL_PREF_KEY)) {
+    const anchor = item.anchor ? document.getElementById(item.anchor) : null;
+    if (anchor) wrapPhraseInAnchor(anchor, item.text, 'custom', item.key);
+  }
+}
+
+function updateRecallTools() {
+  if (!els.recallTools) return;
+  els.removeMaskMode.textContent = `删除遮挡：${state.removeMaskMode ? '开启' : '关闭'}`;
+  els.removeMaskMode.setAttribute('aria-pressed', String(state.removeMaskMode));
+  els.recallToolStatus.textContent = state.removeMaskMode
+    ? '删除模式已开启：点击橙色遮挡块即可移除。'
+    : '选中文字后点“自遮盖”；删除模式可移除不合适的遮挡。';
+}
+
+function addUserMask() {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed || !selection.rangeCount) {
+    els.recallToolStatus.textContent = '请先在正文中选中要遮盖的文字。'; return;
+  }
+  const range = selection.getRangeAt(0);
+  const anchor = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+    ? range.commonAncestorContainer.closest?.('[id]') || range.commonAncestorContainer.querySelector?.('[id]')
+    : range.commonAncestorContainer.parentElement?.closest('[id]');
+  const text = selection.toString().trim();
+  if (!text || range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE && range.commonAncestorContainer.closest?.('.recall-mask')) return;
+  if (range.startContainer !== range.endContainer || range.startContainer.nodeType !== Node.TEXT_NODE) {
+    els.recallToolStatus.textContent = '请在同一段连续文字中选取内容（暂不支持跨格式/跨段落选择）。'; return;
+  }
+  const parentAnchor = range.startContainer.parentElement.closest('[id]');
+  const anchorId = parentAnchor?.id || anchor?.id || '';
+  if (!anchorId) { els.recallToolStatus.textContent = '无法定位这段原文，请在具体段落或表格单元格内选取。'; return; }
+  const key = `custom:${anchorId}:${text}:${Date.now()}`;
+  const span = document.createElement('span'); span.className = 'recall-mask';
+  span.dataset.maskKind = 'custom'; span.dataset.maskKey = key; span.tabIndex = 0;
+  span.setAttribute('role','button'); span.setAttribute('aria-label','自定义遮挡，点击查看');
+  try { span.append(range.extractContents()); range.insertNode(span); selection.removeAllRanges(); }
+  catch { els.recallToolStatus.textContent = '这段文字暂时无法遮盖，请换一段连续文字。'; return; }
+  const items = readLocalList(RECALL_PREF_KEY); items.push({anchor: anchorId, text, key});
+  const saved = writeLocalList(RECALL_PREF_KEY, items);
+  els.recallToolStatus.textContent = saved ? '已添加自定义遮挡，并保存在本机。' : '已添加，但浏览器存储空间不可用，刷新后可能丢失。';
+}
+
+function removeRecallMask(mask) {
+  const kind = mask.dataset.maskKind;
+  const key = mask.dataset.maskKey;
+  if (kind === 'system') {
+    const excluded = readLocalList(RECALL_EXCLUDE_KEY);
+    if (key && !excluded.includes(key)) excluded.push(key);
+    writeLocalList(RECALL_EXCLUDE_KEY, excluded);
+  } else if (kind === 'custom') {
+    writeLocalList(RECALL_PREF_KEY, readLocalList(RECALL_PREF_KEY).filter(item => item.key !== key));
+  }
+  mask.replaceWith(...mask.childNodes);
+  els.recallToolStatus.textContent = '已删除这个遮挡；设置保存在本机浏览器。';
 }
 
 function renderDocSwitcher() {
@@ -1063,7 +1167,16 @@ function bindEvents() {
     mask.setAttribute('aria-label', revealed ? '已显示内容，点击重新遮盖' : '内容已遮盖，点击查看');
   }
   els.content.addEventListener('click', (event) => {
-    toggleRecallMask(event.target.closest('.recall-mask'));
+    const mask = event.target.closest('.recall-mask');
+    if (mask && state.removeMaskMode && state.docIndex === DOCS.findIndex(doc => doc.key === 'recall')) {
+      removeRecallMask(mask); return;
+    }
+    toggleRecallMask(mask);
+  });
+  els.addMask.addEventListener('mousedown', event => event.preventDefault());
+  els.addMask.addEventListener('click', addUserMask);
+  els.removeMaskMode.addEventListener('click', () => {
+    state.removeMaskMode = !state.removeMaskMode; updateRecallTools();
   });
   els.content.addEventListener('keydown', (event) => {
     if (!['Enter', ' '].includes(event.key)) return;
