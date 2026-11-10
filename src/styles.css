@@ -415,21 +415,22 @@ mark.search-hit { padding: 0 1px; background: var(--accent); color: var(--ink); 
 
 /* Recall editing tools */
 .recall-tools {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;
+  display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 8px;
   margin: 0; padding: 10px 12px; border: 1px solid #e5c9a8;
-  border-radius: 14px; background: rgba(255, 250, 244, .97);
-  position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom));
-  transform: translateX(-50%); width: max-content; max-width: calc(100vw - 24px);
-  z-index: 1000; box-shadow: 0 6px 24px rgba(60,40,20,.2);
-  backdrop-filter: blur(10px);
+  border-radius: 16px; background: rgba(255, 250, 244, .98);
+  position: fixed !important; left: 50% !important; right: auto !important;
+  top: auto !important; bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+  transform: translateX(-50%) !important; width: max-content; max-width: calc(100vw - 24px);
+  z-index: 2147483000 !important; box-shadow: 0 8px 28px rgba(60,40,20,.24);
+  backdrop-filter: blur(12px); pointer-events: auto;
 }
-.recall-tools[hidden] { display: none; }
-.recall-tool { min-height: 42px; border: 1px solid #d8a66f; border-radius: 9px; padding: 9px 13px; background: #fff; color: #69451f; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.recall-tools[hidden] { display: none !important; }
+.recall-tool { min-height: 46px; border: 1px solid #d8a66f; border-radius: 10px; padding: 10px 15px; background: #fff; color: #69451f; cursor: pointer; font: inherit; font-size: 14px; font-weight: 650; white-space: nowrap; touch-action: manipulation; }
 .recall-tool[aria-pressed="true"] { background: #8a4b12; color: white; border-color: #8a4b12; }
-#recallToolStatus { color: #765b3d; font-size: 12px; flex: 1 1 180px; text-align: center; }
+#recallToolStatus { color: #765b3d; font-size: 12px; max-width: 230px; text-align: center; }
 .recall-tools ~ .paper .recall-mask { cursor: pointer; }
 @media (max-width: 520px) {
-  .recall-tools { bottom: calc(10px + env(safe-area-inset-bottom)); gap: 6px; padding: 8px; border-radius: 12px; max-width: calc(100vw - 16px); }
-  .recall-tool { min-height: 40px; font-size: 12px; padding: 8px 10px; }
-  #recallToolStatus { flex-basis: 100%; font-size: 11px; }
+  .recall-tools { left: 8px !important; right: 8px !important; bottom: calc(10px + env(safe-area-inset-bottom)) !important; transform: none !important; width: auto; max-width: none; gap: 7px; padding: 8px; border-radius: 13px; }
+  .recall-tool { flex: 1 1 0; min-width: 0; min-height: 48px; font-size: 12px; padding: 8px 5px; white-space: normal; line-height: 1.25; }
+  #recallToolStatus { display: none; }
 }
