@@ -415,13 +415,21 @@ mark.search-hit { padding: 0 1px; background: var(--accent); color: var(--ink); 
 
 /* Recall editing tools */
 .recall-tools {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-  margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--line, #e5e7eb);
-  border-radius: 10px; background: #fffaf4; position: sticky; top: 66px; z-index: 20; box-shadow: 0 3px 12px rgba(60,40,20,.08);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;
+  margin: 0; padding: 10px 12px; border: 1px solid #e5c9a8;
+  border-radius: 14px; background: rgba(255, 250, 244, .97);
+  position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: translateX(-50%); width: max-content; max-width: calc(100vw - 24px);
+  z-index: 1000; box-shadow: 0 6px 24px rgba(60,40,20,.2);
+  backdrop-filter: blur(10px);
 }
 .recall-tools[hidden] { display: none; }
-.recall-tool { min-height: 40px; border: 1px solid #d8a66f; border-radius: 8px; padding: 8px 11px; background: #fff; color: #69451f; cursor: pointer; font: inherit; font-size: 13px; }
+.recall-tool { min-height: 42px; border: 1px solid #d8a66f; border-radius: 9px; padding: 9px 13px; background: #fff; color: #69451f; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; white-space: nowrap; }
 .recall-tool[aria-pressed="true"] { background: #8a4b12; color: white; border-color: #8a4b12; }
-#recallToolStatus { color: #765b3d; font-size: 12px; flex: 1 1 180px; }
+#recallToolStatus { color: #765b3d; font-size: 12px; flex: 1 1 180px; text-align: center; }
 .recall-tools ~ .paper .recall-mask { cursor: pointer; }
-@media (max-width: 520px) { .recall-tools { top: 58px; gap: 6px; padding: 8px; } .recall-tool { font-size: 12px; padding: 8px; } }
+@media (max-width: 520px) {
+  .recall-tools { bottom: calc(10px + env(safe-area-inset-bottom)); gap: 6px; padding: 8px; border-radius: 12px; max-width: calc(100vw - 16px); }
+  .recall-tool { min-height: 40px; font-size: 12px; padding: 8px 10px; }
+  #recallToolStatus { flex-basis: 100%; font-size: 11px; }
+}
