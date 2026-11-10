@@ -411,3 +411,17 @@ mark.search-hit { padding: 0 1px; background: var(--accent); color: var(--ink); 
 @media (max-width: 520px) {
   .recall-mask { padding: 0.08em 0.24em; }
 }
+
+
+/* Recall editing tools */
+.recall-tools {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--line, #e5e7eb);
+  border-radius: 10px; background: #fffaf4; position: sticky; top: 66px; z-index: 5;
+}
+.recall-tools[hidden] { display: none; }
+.recall-tool { border: 1px solid #d8a66f; border-radius: 8px; padding: 8px 11px; background: #fff; color: #69451f; cursor: pointer; font: inherit; font-size: 13px; }
+.recall-tool[aria-pressed="true"] { background: #8a4b12; color: white; border-color: #8a4b12; }
+#recallToolStatus { color: #765b3d; font-size: 12px; flex: 1 1 180px; }
+.recall-tools ~ .paper .recall-mask { cursor: pointer; }
+@media (max-width: 520px) { .recall-tools { top: 58px; gap: 6px; padding: 8px; } .recall-tool { font-size: 12px; padding: 8px; } }
