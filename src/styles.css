@@ -235,14 +235,7 @@ a { color: inherit; }
   margin: 1.1em 0; padding: 0.12em 0 0.12em 16px;
   border-left: 2px solid var(--accent-strong); color: var(--ink-soft);
 }
-.prose .table-wrap {
-  display: block; width: 100%; max-width: 100%; box-sizing: border-box;
-  overflow-x: auto; overscroll-behavior-x: contain; margin: 1.3em 0;
-  border: 1px solid var(--line); border-radius: 8px;
-  background: color-mix(in srgb, var(--surface-2) 58%, var(--surface));
-  scrollbar-width: thin;
-}
-.prose table { width: max-content; min-width: 100%; border-collapse: collapse; table-layout: auto; font-size: 14px; line-height: 1.58; }
+.prose table { width: 100%; border-collapse: collapse; table-layout: auto; font-size: 14px; line-height: 1.58; }
 .prose thead th { background: var(--accent-soft); }
 .prose th, .prose td {
   min-width: 72px; padding: 8px 10px; text-align: left; vertical-align: top;
@@ -260,7 +253,7 @@ a { color: inherit; }
   border-radius: 8px; white-space: pre; scrollbar-width: thin;
 }
 .prose pre code { display: block; width: max-content; min-width: 100%; font-family: var(--mono); }
-.prose :where(p, li, td, th) { overflow-wrap: anywhere; }
+.prose :where(p, li) { overflow-wrap: anywhere; }
 .prose strong, .prose b { font-weight: 780; }
 .prose hr { border: 0; border-top: 1px solid var(--line); margin: 2em 0; }
 .prose math { font-size: 1.02em; }
