@@ -236,6 +236,8 @@ a { color: inherit; }
   border-left: 2px solid var(--accent-strong); color: var(--ink-soft);
 }
 .prose table { width: 100%; border-collapse: collapse; table-layout: auto; font-size: 14px; line-height: 1.58; }
+.prose .table-scroll-wrap { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; }
+.prose .table-scroll-wrap table { min-width: 560px; }
 .prose thead th { background: var(--accent-soft); }
 .prose th, .prose td {
   min-width: 72px; padding: 8px 10px; text-align: left; vertical-align: top;
@@ -368,6 +370,7 @@ mark.search-hit { padding: 0 1px; background: var(--accent); color: var(--ink); 
   .reader-context { font-size: 11px; }
   .prose { padding-right: 15px; padding-left: 15px; }
   .prose table { font-size: 13px; }
+  .prose .table-scroll-wrap table { min-width: 560px; }
   .search-panel-head { padding-right: 14px; padding-left: 14px; }
   .result-item { padding-right: 14px; padding-left: 14px; }
 }
