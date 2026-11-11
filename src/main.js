@@ -106,6 +106,7 @@ async function switchDoc(docIndex, { initial = false } = {}) {
     els.content.innerHTML = data.html;
     renderInlineMath(els.content);
     wrapWideTables(els.content);
+    repairKnownTableLayouts(els.content);
     if (doc.key === 'recall') applyRecallMasks();
     else if (doc.key === 'kuangbei') applySavedCustomMasks();
     els.recallTools.hidden = !['kuangbei', 'recall'].includes(doc.key);
@@ -1652,6 +1653,23 @@ function wrapWideTables(root) {
     wrapper.className = 'table-scroll-wrap';
     table.parentNode.insertBefore(wrapper, table);
     wrapper.appendChild(table);
+  });
+}
+
+
+function repairKnownTableLayouts(root) {
+  // Acute pancreatitis table: the indicator row follows a cell incorrectly
+  // spanning two rows, which makes the browser create extra columns.
+  const pancreatitisTable = root.querySelector('#b00124');
+  if (!pancreatitisTable) return;
+  pancreatitisTable.querySelectorAll('tr').forEach((row) => {
+    const cells = Array.from(row.children);
+    if (cells.length === 2 && cells[0].textContent.trim() === '保守治疗') {
+      const spanningCell = cells[1];
+      if (spanningCell.getAttribute('rowspan') === '2') {
+        spanningCell.setAttribute('rowspan', '1');
+      }
+    }
   });
 }
 
