@@ -105,6 +105,7 @@ async function switchDoc(docIndex, { initial = false } = {}) {
     state.activeOutlineId = null;
     els.content.innerHTML = data.html;
     renderInlineMath(els.content);
+    wrapWideTables(els.content);
     if (doc.key === 'recall') applyRecallMasks();
     else if (doc.key === 'kuangbei') applySavedCustomMasks();
     els.recallTools.hidden = !['kuangbei', 'recall'].includes(doc.key);
@@ -1633,6 +1634,21 @@ function renderInlineMath(root) {
     value = value.replace(/([A-Za-z0-9]+)\^\{?([A-Za-z0-9+-]+)\}?/g, '$1<sup>$2</sup>');
     node.classList.add('math-inline');
     node.innerHTML = value;
+  });
+}
+
+function wrapWideTables(root) {
+  root.querySelectorAll('table').forEach((table) => {
+    const firstRow = table.querySelector('tr');
+    if (!firstRow) return;
+    const columns = Array.from(firstRow.children).reduce((count, cell) => {
+      return count + Math.max(1, Number(cell.getAttribute('colspan')) || 1);
+    }, 0);
+    if (columns < 4 || table.parentElement?.classList.contains('table-scroll-wrap')) return;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'table-scroll-wrap';
+    table.parentNode.insertBefore(wrapper, table);
+    wrapper.appendChild(table);
   });
 }
 
