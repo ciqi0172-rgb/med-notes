@@ -1626,7 +1626,7 @@ function renderInlineMath(root) {
     [/\\%/g, '%'], [/\\,/g, ' '], [/\\!/g, ''],
   ];
   root.querySelectorAll('math').forEach((node) => {
-    let value = node.textContent || '';
+    let value = escapeHTML(node.textContent || '');
     for (const [pattern, replacement] of replacements) value = value.replace(pattern, replacement);
     value = value.replace(/\\text\{([^{}]*)\}/g, '$1');
     value = value.replace(/([A-Za-z][A-Za-z0-9]*)_\{?([A-Za-z0-9+-]+)\}?/g, '$1<sub>$2</sub>');
