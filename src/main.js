@@ -104,6 +104,7 @@ async function switchDoc(docIndex, { initial = false } = {}) {
     state.matches = [];
     state.activeOutlineId = null;
     els.content.innerHTML = data.html;
+    renderInlineMath(els.content);
     if (doc.key === 'recall') applyRecallMasks();
     else if (doc.key === 'kuangbei') applySavedCustomMasks();
     els.recallTools.hidden = !['kuangbei', 'recall'].includes(doc.key);
@@ -1614,6 +1615,25 @@ function updateReaderContext(id) {
 
 function normalizeText(value) {
   return String(value || '').toLocaleLowerCase('zh-CN');
+}
+
+function renderInlineMath(root) {
+  const replacements = [
+    [/\\\\beta\\b/g, 'β'], [/\\\\alpha\\b/g, 'α'], [/\\\\gamma\\b/g, 'γ'],
+    [/\\\\delta\\b/g, 'δ'], [/\\\\theta\\b/g, 'θ'], [/\\\\mu\\b/g, 'μ'],
+    [/\\\\geq\\b/g, '≥'], [/\\\\leq\\b/g, '≤'], [/\\\\times\\b/g, '×'],
+    [/\\\\uparrow\\b/g, '↑'], [/\\\\downarrow\\b/g, '↓'],
+    [/\\\\%/g, '%'], [/\\\\,/g, ' '], [/\\\\!/g, ''],
+  ];
+  root.querySelectorAll('math').forEach((node) => {
+    let value = node.textContent || '';
+    for (const [pattern, replacement] of replacements) value = value.replace(pattern, replacement);
+    value = value.replace(/\\\\text\\{([^{}]*)\\}/g, '$1');
+    value = value.replace(/([A-Za-z][A-Za-z0-9]*)_\\{?([A-Za-z0-9+-]+)\\}?/g, '$1<sub>$2</sub>');
+    value = value.replace(/([A-Za-z0-9]+)\\^\\{?([A-Za-z0-9+-]+)\\}?/g, '$1<sup>$2</sup>');
+    node.classList.add('math-inline');
+    node.innerHTML = value;
+  });
 }
 
 function escapeHTML(value) {
