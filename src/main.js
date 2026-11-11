@@ -1624,6 +1624,8 @@ function renderInlineMath(root) {
     [/\\delta\b/g, 'δ'], [/\\theta\b/g, 'θ'], [/\\mu\b/g, 'μ'],
     [/\\geq\b/g, '≥'], [/\\leq\b/g, '≤'], [/\\times\b/g, '×'],
     [/\\uparrow\b/g, '↑'], [/\\downarrow\b/g, '↓'],
+    [/\\rightarrow\b/g, '→'], [/\\leftarrow\b/g, '←'],
+    [/\\circ\b/g, '°'],
     [/\\%/g, '%'], [/\\,/g, ' '], [/\\!/g, ''],
   ];
   root.querySelectorAll('math').forEach((node) => {
@@ -1632,11 +1634,12 @@ function renderInlineMath(root) {
     value = value.replace(/\\text\{([^{}]*)\}/g, '$1');
     value = value.replace(/([A-Za-z][A-Za-z0-9]*)_\{?([A-Za-z0-9+-]+)\}?/g, '$1<sub>$2</sub>');
     value = value.replace(/([A-Za-z0-9]+)\^\{?([A-Za-z0-9+-]+)\}?/g, '$1<sup>$2</sup>');
-    node.classList.add('math-inline');
-    node.innerHTML = value;
+    const span = document.createElement('span');
+    span.className = 'math-inline';
+    span.innerHTML = value;
+    node.replaceWith(span);
   });
 }
-
 function wrapWideTables(root) {
   root.querySelectorAll('table').forEach((table) => {
     const firstRow = table.querySelector('tr');
