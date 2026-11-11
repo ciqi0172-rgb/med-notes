@@ -104,7 +104,6 @@ async function switchDoc(docIndex, { initial = false } = {}) {
     state.matches = [];
     state.activeOutlineId = null;
     els.content.innerHTML = data.html;
-    wrapTables(els.content);
     renderInlineMath(els.content);
     if (doc.key === 'recall') applyRecallMasks();
     else if (doc.key === 'kuangbei') applySavedCustomMasks();
@@ -1616,21 +1615,6 @@ function updateReaderContext(id) {
 
 function normalizeText(value) {
   return String(value || '').toLocaleLowerCase('zh-CN');
-}
-
-function wrapTables(root) {
-  // Wrap from the innermost table outward so nested tables remain independently scrollable.
-  const tables = Array.from(root.querySelectorAll('table')).reverse();
-  tables.forEach((table) => {
-    if (table.parentElement?.classList.contains('table-wrap')) return;
-    const wrapper = document.createElement('div');
-    wrapper.className = 'table-wrap';
-    wrapper.setAttribute('role', 'region');
-    wrapper.setAttribute('aria-label', '可横向滚动的表格');
-    wrapper.tabIndex = 0;
-    table.parentNode.insertBefore(wrapper, table);
-    wrapper.appendChild(table);
-  });
 }
 
 function renderInlineMath(root) {
