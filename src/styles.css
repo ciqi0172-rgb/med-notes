@@ -236,12 +236,13 @@ a { color: inherit; }
   border-left: 2px solid var(--accent-strong); color: var(--ink-soft);
 }
 .prose .table-wrap {
-  max-width: 100%; overflow-x: auto; margin: 1.3em 0;
+  display: block; width: 100%; max-width: 100%; box-sizing: border-box;
+  overflow-x: auto; overscroll-behavior-x: contain; margin: 1.3em 0;
   border: 1px solid var(--line); border-radius: 8px;
   background: color-mix(in srgb, var(--surface-2) 58%, var(--surface));
   scrollbar-width: thin;
 }
-.prose table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.58; }
+.prose table { width: max-content; min-width: 100%; border-collapse: collapse; table-layout: auto; font-size: 14px; line-height: 1.58; }
 .prose thead th { background: var(--accent-soft); }
 .prose th, .prose td {
   min-width: 72px; padding: 8px 10px; text-align: left; vertical-align: top;
