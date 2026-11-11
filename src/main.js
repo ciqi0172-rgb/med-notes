@@ -1619,18 +1619,18 @@ function normalizeText(value) {
 
 function renderInlineMath(root) {
   const replacements = [
-    [/\\\\beta\\b/g, 'β'], [/\\\\alpha\\b/g, 'α'], [/\\\\gamma\\b/g, 'γ'],
-    [/\\\\delta\\b/g, 'δ'], [/\\\\theta\\b/g, 'θ'], [/\\\\mu\\b/g, 'μ'],
-    [/\\\\geq\\b/g, '≥'], [/\\\\leq\\b/g, '≤'], [/\\\\times\\b/g, '×'],
-    [/\\\\uparrow\\b/g, '↑'], [/\\\\downarrow\\b/g, '↓'],
-    [/\\\\%/g, '%'], [/\\\\,/g, ' '], [/\\\\!/g, ''],
+    [/\\beta\b/g, 'β'], [/\\alpha\b/g, 'α'], [/\\gamma\b/g, 'γ'],
+    [/\\delta\b/g, 'δ'], [/\\theta\b/g, 'θ'], [/\\mu\b/g, 'μ'],
+    [/\\geq\b/g, '≥'], [/\\leq\b/g, '≤'], [/\\times\b/g, '×'],
+    [/\\uparrow\b/g, '↑'], [/\\downarrow\b/g, '↓'],
+    [/\\%/g, '%'], [/\\,/g, ' '], [/\\!/g, ''],
   ];
   root.querySelectorAll('math').forEach((node) => {
     let value = node.textContent || '';
     for (const [pattern, replacement] of replacements) value = value.replace(pattern, replacement);
-    value = value.replace(/\\\\text\\{([^{}]*)\\}/g, '$1');
-    value = value.replace(/([A-Za-z][A-Za-z0-9]*)_\\{?([A-Za-z0-9+-]+)\\}?/g, '$1<sub>$2</sub>');
-    value = value.replace(/([A-Za-z0-9]+)\\^\\{?([A-Za-z0-9+-]+)\\}?/g, '$1<sup>$2</sup>');
+    value = value.replace(/\\text\{([^{}]*)\}/g, '$1');
+    value = value.replace(/([A-Za-z][A-Za-z0-9]*)_\{?([A-Za-z0-9+-]+)\}?/g, '$1<sub>$2</sub>');
+    value = value.replace(/([A-Za-z0-9]+)\^\{?([A-Za-z0-9+-]+)\}?/g, '$1<sup>$2</sup>');
     node.classList.add('math-inline');
     node.innerHTML = value;
   });
