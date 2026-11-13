@@ -1042,8 +1042,12 @@ function applySavedCustomMasks() {
 }
 
 function getSurgeryContentRange() {
-  const start = els.content.querySelector('#b00212');
-  const end = els.content.querySelector('#b00421');
+  // Use the source index's section metadata, not a guessed ID interval.
+  // This includes all surgery material, including "检查狂串".
+  const surgeryBlocks = (state.index?.blocks || []).filter((block) => block.s === '外科' && block.id);
+  if (!surgeryBlocks.length) return null;
+  const start = els.content.querySelector(`#${CSS.escape(surgeryBlocks[0].id)}`);
+  const end = els.content.querySelector(`#${CSS.escape(surgeryBlocks[surgeryBlocks.length - 1].id)}`);
   if (!start || !end) return null;
   const range = document.createRange();
   range.setStartBefore(start);
