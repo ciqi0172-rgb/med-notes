@@ -1080,8 +1080,6 @@ function clearSurgeryMasks() {
       const key = mask.dataset.maskKey;
       if (key && !excluded.includes(key)) excluded.push(key);
       systemCount++;
-    } else if (mask.dataset.maskKind === 'custom') {
-      customCount++;
     }
     mask.replaceWith(...mask.childNodes);
   });
