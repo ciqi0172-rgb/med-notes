@@ -28,8 +28,8 @@ const els = {
 
 const DOCS = [
   { key: 'mindmap', name: '思维导图', indexUrl: './assets/search-index.json', contentUrl: './assets/content.html' },
-  { key: 'kuangbei', name: '狂背', indexUrl: './assets/kuangbei-index.json', contentUrl: './assets/kuangbei-content.html' },
-  { key: 'recall', name: '狂背自检', indexUrl: './assets/kuangbei-index.json', contentUrl: './assets/kuangbei-content.html' },
+  { key: 'kuangbei', name: '狂背', indexUrl: './assets/kuangbei-index.json?v=surgery-directory-fix1', contentUrl: './assets/kuangbei-content.html' },
+  { key: 'recall', name: '狂背自检', indexUrl: './assets/kuangbei-index.json?v=surgery-directory-fix1', contentUrl: './assets/kuangbei-content.html' },
 ];
 
 const state = {
