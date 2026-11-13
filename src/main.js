@@ -22,6 +22,7 @@ const els = {
   recallTools: document.querySelector('#recallTools'),
   addMask: document.querySelector('#addMaskButton'),
   removeMaskMode: document.querySelector('#removeMaskModeButton'),
+  clearSurgeryMasks: document.querySelector('#clearSurgeryMasksButton'),
   recallToolStatus: document.querySelector('#recallToolStatus'),
 };
 
@@ -1040,6 +1041,50 @@ function applySavedCustomMasks() {
   }
 }
 
+function getSurgeryContentRange() {
+  const start = els.content.querySelector('#b00212');
+  const end = els.content.querySelector('#b00421');
+  if (!start || !end) return null;
+  const range = document.createRange();
+  range.setStartBefore(start);
+  range.setEndAfter(end);
+  return range;
+}
+
+function clearSurgeryMasks() {
+  const range = getSurgeryContentRange();
+  if (!range) {
+    els.recallToolStatus.textContent = '没有定位到外科内容范围，未清除任何遮挡。';
+    return;
+  }
+
+  const saved = readLocalList(RECALL_PREF_KEY);
+  const kept = [];
+  let customCount = 0;
+  for (const item of saved) {
+    const anchor = item.anchor ? document.getElementById(item.anchor) : null;
+    if (anchor && range.intersectsNode(anchor)) customCount++;
+    else kept.push(item);
+  }
+  writeLocalList(RECALL_PREF_KEY, kept);
+
+  const excluded = readLocalList(RECALL_EXCLUDE_KEY);
+  let systemCount = 0;
+  els.content.querySelectorAll('.recall-mask').forEach((mask) => {
+    if (!range.intersectsNode(mask)) return;
+    if (mask.dataset.maskKind === 'system') {
+      const key = mask.dataset.maskKey;
+      if (key && !excluded.includes(key)) excluded.push(key);
+      systemCount++;
+    } else if (mask.dataset.maskKind === 'custom') {
+      customCount++;
+    }
+    mask.replaceWith(...mask.childNodes);
+  });
+  writeLocalList(RECALL_EXCLUDE_KEY, excluded);
+  els.recallToolStatus.textContent = `已清除外科区域遮挡：系统遮挡 ${systemCount} 处、自定义遮挡 ${customCount} 处；内科遮挡未改动。`;
+}
+
 function updateRecallTools() {
   if (!els.recallTools) return;
   els.removeMaskMode.textContent = `删除遮挡：${state.removeMaskMode ? '开启' : '关闭'}`;
@@ -1212,6 +1257,7 @@ function bindEvents() {
   els.removeMaskMode.addEventListener('click', () => {
     state.removeMaskMode = !state.removeMaskMode; updateRecallTools();
   });
+  els.clearSurgeryMasks.addEventListener('click', clearSurgeryMasks);
   els.content.addEventListener('keydown', (event) => {
     if (!['Enter', ' '].includes(event.key)) return;
     const mask = event.target.closest('.recall-mask');
