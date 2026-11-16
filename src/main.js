@@ -28,7 +28,7 @@ const els = {
 const DOCS = [
   { key: 'mindmap', name: '思维导图', indexUrl: './assets/search-index.json', contentUrl: './assets/content.html' },
   { key: 'kuangbei', name: '狂背', indexUrl: './assets/kuangbei-index.json?v=surgery-directory-fix1', contentUrl: './assets/kuangbei-content.html' },
-  { key: 'recall', name: '狂背自检', indexUrl: './assets/kuangbei-foundation-index.json?v=foundation1', contentUrl: './assets/kuangbei-foundation-content.html' },
+  { key: 'recall', name: '狂背自检', indexUrl: './assets/kuangbei-foundation-index.json?v=foundation2', contentUrl: './assets/kuangbei-foundation-content.html' },
 ];
 
 const state = {
@@ -110,7 +110,7 @@ async function switchDoc(docIndex, { initial = false } = {}) {
     repairKnownTableLayouts(els.content);
     if (doc.key === 'recall') { /* 基础学科狂背原文展示，不做遮盖 */ }
     else if (doc.key === 'kuangbei') applySavedCustomMasks();
-    els.recallTools.hidden = !['kuangbei', 'recall'].includes(doc.key);
+    els.recallTools.hidden = doc.key !== 'kuangbei';
     state.removeMaskMode = false;
     updateRecallTools();
 
