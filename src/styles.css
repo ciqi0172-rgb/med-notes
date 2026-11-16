@@ -431,3 +431,7 @@ mark.search-hit { padding: 0 1px; background: var(--accent); color: var(--ink); 
   .recall-tool { flex: 1 1 0; min-width: 0; min-height: 48px; font-size: 12px; padding: 8px 5px; white-space: normal; line-height: 1.25; }
   #recallToolStatus { display: none; }
 }
+
+/* 补充资料仅显示在“狂背自检”，不改动原“狂背”展示。 */
+.recall-supplement { display: none; }
+#documentContent.recall-mode .recall-supplement { display: inline; }
