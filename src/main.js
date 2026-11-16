@@ -108,9 +108,9 @@ async function switchDoc(docIndex, { initial = false } = {}) {
     renderInlineMath(els.content);
     wrapWideTables(els.content);
     repairKnownTableLayouts(els.content);
-    if (doc.key === 'recall') { /* 基础学科狂背原文展示，不做遮盖 */ }
-    else if (doc.key === 'kuangbei') applySavedCustomMasks();
-    els.recallTools.hidden = doc.key !== 'kuangbei';
+    if (doc.key === 'kuangbei' || doc.key === 'recall') applySavedCustomMasks();
+    // 两套狂背都提供手动自遮盖；不自动遮盖原文。
+    els.recallTools.hidden = !['kuangbei', 'recall'].includes(doc.key);
     state.removeMaskMode = false;
     updateRecallTools();
 
