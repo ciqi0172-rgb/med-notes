@@ -29,7 +29,7 @@ const DOCS = [
   { key: 'mindmap', name: '思维导图', indexUrl: './assets/search-index.json', contentUrl: './assets/content.html' },
   { key: 'kuangbei', name: '狂背', indexUrl: './assets/kuangbei-index.json?v=surgery-directory-fix1', contentUrl: './assets/kuangbei-content.html' },
   { key: 'recall', name: '狂背自检', indexUrl: './assets/kuangbei-index.json?v=recall-restore-20261116', contentUrl: './assets/kuangbei-content.html?v=recall-restore-20261116' },
-  { key: 'foundation', name: '基础学科自检', indexUrl: './assets/kuangbei-foundation-index.json?v=foundation-load-fix-20261117', contentUrl: './assets/kuangbei-foundation-content.html?v=foundation-load-fix-20261117' },
+  { key: 'foundation', name: '基础学科自检', indexUrl: './assets/kuangbei-foundation-index.json?v=foundation-outline-fix-20261117', contentUrl: './assets/kuangbei-foundation-content.html?v=foundation-outline-fix-20261117' },
 ];
 
 const state = {
