@@ -29,7 +29,7 @@ const DOCS = [
   { key: 'mindmap', name: '思维导图', indexUrl: './assets/search-index.json', contentUrl: './assets/content.html' },
   { key: 'kuangbei', name: '狂背', indexUrl: './assets/kuangbei-index.json?v=surgery-directory-fix1', contentUrl: './assets/kuangbei-content.html' },
   { key: 'recall', name: '狂背自检', indexUrl: './assets/kuangbei-index.json?v=recall-restore-20261116', contentUrl: './assets/kuangbei-content.html?v=recall-restore-20261116' },
-  { key: 'foundation', name: '基础学科自检', indexUrl: './assets/kuangbei-foundation-no-image-ocr-20261117.json?v=foundation-no-image-ocr-20261117', contentUrl: './assets/kuangbei-foundation-no-image-ocr-20261117.html?v=foundation-no-image-ocr-20261117' },
+  { key: 'foundation', name: '基础学科自检', indexUrl: './assets/kuangbei-greek-symbols-20261117.json?v=greek-symbols-20261117', contentUrl: './assets/kuangbei-greek-symbols-20261117.html?v=greek-symbols-20261117' },
 ];
 
 const state = {
@@ -1623,8 +1623,22 @@ function normalizeText(value) {
 
 function renderInlineMath(root) {
   const replacements = [
-    [/\\beta\b/g, 'β'], [/\\alpha\b/g, 'α'], [/\\gamma\b/g, 'γ'],
-    [/\\delta\b/g, 'δ'], [/\\theta\b/g, 'θ'], [/\\mu\b/g, 'μ'],
+    // Greek letters: normalize common LaTeX commands to Unicode so they render
+    // consistently on mobile browsers without a MathJax dependency.
+    [/\\alpha\b/g, 'α'], [/\\beta\b/g, 'β'], [/\\gamma\b/g, 'γ'],
+    [/\\delta\b/g, 'δ'], [/\\epsilon\b/g, 'ε'], [/\\varepsilon\b/g, 'ϵ'],
+    [/\\zeta\b/g, 'ζ'], [/\\eta\b/g, 'η'], [/\\theta\b/g, 'θ'],
+    [/\\vartheta\b/g, 'ϑ'], [/\\iota\b/g, 'ι'], [/\\kappa\b/g, 'κ'],
+    [/\\lambda\b/g, 'λ'], [/\\mu\b/g, 'μ'], [/\\nu\b/g, 'ν'],
+    [/\\xi\b/g, 'ξ'], [/\\omicron\b/g, 'ο'], [/\\pi\b/g, 'π'],
+    [/\\varpi\b/g, 'ϖ'], [/\\rho\b/g, 'ρ'], [/\\varrho\b/g, 'ϱ'],
+    [/\\sigma\b/g, 'σ'], [/\\varsigma\b/g, 'ς'], [/\\tau\b/g, 'τ'],
+    [/\\upsilon\b/g, 'υ'], [/\\phi\b/g, 'φ'], [/\\varphi\b/g, 'ϕ'],
+    [/\\chi\b/g, 'χ'], [/\\psi\b/g, 'ψ'], [/\\omega\b/g, 'ω'],
+    [/\\Gamma\b/g, 'Γ'], [/\\Delta\b/g, 'Δ'], [/\\Theta\b/g, 'Θ'],
+    [/\\Lambda\b/g, 'Λ'], [/\\Xi\b/g, 'Ξ'], [/\\Pi\b/g, 'Π'],
+    [/\\Sigma\b/g, 'Σ'], [/\\Upsilon\b/g, 'Υ'], [/\\Phi\b/g, 'Φ'],
+    [/\\Psi\b/g, 'Ψ'], [/\\Omega\b/g, 'Ω'],
     [/\\geq\b/g, '≥'], [/\\leq\b/g, '≤'], [/\\times\b/g, '×'],
     [/\\uparrow\b/g, '↑'], [/\\downarrow\b/g, '↓'],
     [/\\rightarrow\b/g, '→'], [/\\leftarrow\b/g, '←'],
