@@ -1120,11 +1120,22 @@ function showLoadError(error) {
   console.error(error);
   els.stats.textContent = '文档载入失败';
   els.searchPanel.hidden = true;
+  const detail = error?.message ? String(error.message) : String(error || '未知错误');
   els.content.innerHTML = `
-    <p class="load-error">正文或索引没有载入成功。
-      <button class="retry-button" id="retryLoad" type="button">重新载入</button>
-    </p>`;
-  document.querySelector('#retryLoad').addEventListener('click', () => location.reload());
+    <p class="load-error">正文或索引没有载入成功。</p>
+    <p class="load-error-detail"></p>
+    <button class="retry-button" id="retryLoad" type="button">重新载入当前资料</button>`;
+  els.content.querySelector('.load-error-detail').textContent = detail;
+  document.querySelector('#retryLoad').addEventListener('click', async () => {
+    const docIndex = state.docIndex;
+    delete state.docCache[DOCS[docIndex]?.key];
+    els.content.innerHTML = '<p class="loading-line">正在重新载入当前资料…</p>';
+    try {
+      await switchDoc(docIndex, { initial: true });
+    } catch (retryError) {
+      showLoadError(retryError);
+    }
+  });
 }
 
 function renderStats() {
